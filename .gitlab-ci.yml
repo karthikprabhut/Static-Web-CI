@@ -1,0 +1,44 @@
+---
+stages:
+  - validate
+  - plan
+  - apply
+
+## Terraform image for execution
+image:
+  name: hashicorp/terraform:light
+  entrypoint:
+    - '/usr/bin/env'
+    - 'PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
+before_script:
+  - export AWS_ACCESS_KEY=${AWS_ACCESS_KEY_ID}
+  - export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+  - rm -rf .terraform
+  - terraform --version
+  - terraform init
+
+## Terraform code validation
+validate:
+  stage: validate
+  script:
+    - terraform validate
+
+## Terraform plan for this deployment
+plan:
+  stage: plan
+  script:
+    - terraform plan -out "planfile"
+  dependencies:
+    - validate
+  artifacts:
+    paths:
+      - planfile
+
+## Terraform apply the changes
+# apply:
+#   stage: apply
+#   script:
+#     - terraform apply -input=false "planfile"
+#   dependencies:
+#     - plan
+#   when: manual
